@@ -390,9 +390,11 @@ np.random.seed(seed)
 
 # device = 'cuda' if torch.cuda.is_available() else 'cpu'
 device = 'cpu'
+data_name = 'teddy'  # 'cones'  # 'teddy'
 
-dataset = MyData('dataset/cones/im_l.png', 'dataset/cones/im_r.png',
-                 'dataset/cones/disp_l.png', 'dataset/cones/disp_r.png')
+
+dataset = MyData(f'dataset/{data_name}/im_l.png', f'dataset/{data_name}/im_r.png',
+                 f'dataset/{data_name}/disp_l.png', f'dataset/{data_name}/disp_r.png')
 
 im_w, im_h = 450, 375
 batch_size = im_w * im_h
@@ -401,8 +403,8 @@ lr = 1
 hidden_dim = 10
 
 data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, drop_last=False)
-im_l = Image.open('dataset/cones/im_l.png')
-im_r = Image.open('dataset/cones/im_r.png')
+im_l = Image.open(f'dataset/{data_name}/im_l.png')
+im_r = Image.open(f'dataset/{data_name}/im_r.png')
 to_tensor = transforms.ToTensor()
 
 eps_occl = 0.005  # 0.005 # 0.01 # 0.02
@@ -420,10 +422,16 @@ for epoch in range(epochs):
 
         # update phi:
         e_occ_l, g_l, phi_l, d_l, v_l, e_occ_r, g_r, phi_r, d_r, v_r = pipe(batch)
+
+        # using GT:
         # d_l = batch['d_l'].unsqueeze(1)
         # g_l = torch.cat([xy[:, [0]] - d_l, xy[:, [1]]], dim=1)
         # d_r = batch['d_r'].unsqueeze(1)
         # g_r = torch.cat([xy[:, [0]] + d_r, xy[:, [1]]], dim=1)
+
+        plt.imshow(d_l.detach().view(im_h, im_w), cmap='gray'), plt.title('d_l'), plt.show()
+        plt.imshow(d_r.detach().view(im_h, im_w), cmap='gray'), plt.title('d_r'), plt.show()
+
         l1_l = loss1(e_occ_l, phi_l, epoch)
         l1_r = loss1(e_occ_r, phi_r, epoch)
         l2_l, es_l, ed_l = loss2(g_l, xy, d_l, phi_l, v_l, 'left')
